@@ -1,0 +1,26 @@
+# Environment files - contain secrets, never commit these
+.env
+backend/.env
+frontend/.env
+
+# Docker
+backend/.orchestrator-image
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
