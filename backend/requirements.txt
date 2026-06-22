@@ -7,3 +7,4 @@ python-dotenv==1.0.0
 bedrock_agentcore[strands-agents]==1.0.7
 mcp==1.20.0
 langfuse==3.6.2
+mysql-connector-python==8.3.0
