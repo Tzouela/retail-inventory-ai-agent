@@ -23,6 +23,8 @@ services:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
       - AWS_SESSION_TOKEN
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
     volumes:
       - .:/app
       - ~/.aws:/home/agentuser/.aws:ro

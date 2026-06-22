@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from strands import Agent
 from strands.models.bedrock import BedrockModel
 from strands_tools import current_time
+from tools.inventory_tools import check_low_stock, get_sales_velocity
 from streaming import parse_agent_events
 from utils import get_user_id
 
@@ -30,12 +31,24 @@ app.add_middleware(
 )
 
 SYSTEM_PROMPT = """# Retail Inventory Management Agent
-You are an intelligent retail inventory management agent.
-Your role is to autonomously monitor stock levels, analyze sales patterns,
-and generate reorder recommendations for human approval.
 
-# Current Status
-System is being configured. Tools and full capabilities coming soon.
+You are an intelligent retail inventory management agent for a sneaker store.
+You have access to real inventory and sales data through your tools.
+
+# Your Primary Job
+Run daily inventory checks by:
+1. Using check_low_stock to identify products below minimum stock levels
+2. Using get_sales_velocity to understand how fast products are selling
+3. Combining both to recommend reorder quantities
+4. Presenting a clear, human-readable summary for manager approval
+
+# Rules
+- Always use your tools to get real data before making recommendations
+- Never guess stock levels or sales figures — always query the database
+- Reorder quantity should cover at least 2 weeks of average sales
+- Present recommendations clearly: product, size, colour, current stock, recommended order quantity
+- Always end with a summary list ready for human approval
+- Do not place any orders — only recommend. A human must approve first.
 """
 
 # Bedrock models - us-east-1 is required for Claude Haiku
@@ -61,7 +74,7 @@ def get_or_create_agent(session_id: str, user_id: str) -> Agent:
             name="Retail Inventory Agent",
             model=model,
             system_prompt=SYSTEM_PROMPT,
-            tools=[current_time],
+            tools=[current_time, check_low_stock, get_sales_velocity],
             callback_handler=None,
             trace_attributes={
                 "session.id": session_id,
