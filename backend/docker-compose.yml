@@ -2,7 +2,7 @@ services:
   mysql-db:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: inventory_root
       MYSQL_DATABASE: inventory_db
