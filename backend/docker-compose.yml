@@ -1,5 +1,19 @@
 services:
-  workshop-agent:
+  mysql-db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: inventory_root
+      MYSQL_DATABASE: inventory_db
+      MYSQL_USER: inventory_user
+      MYSQL_PASSWORD: inventory_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database/migrations:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  inventory-agent:
     build: .
     ports:
       - "8081:8080"
@@ -13,4 +27,9 @@ services:
       - .:/app
       - ~/.aws:/home/agentuser/.aws:ro
     command: uvicorn app:app --host 0.0.0.0 --port 8080 --reload --no-access-log
+    depends_on:
+      - mysql-db
     restart: unless-stopped
+
+volumes:
+  mysql_data:
