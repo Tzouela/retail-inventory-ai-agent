@@ -14,6 +14,7 @@ from strands import Agent
 from strands.models.bedrock import BedrockModel
 from strands_tools import current_time
 from tools.inventory_tools import check_low_stock, get_sales_velocity
+from sub_agents.inventory_analysis_agent import inventory_analysis_agent
 from streaming import parse_agent_events
 from utils import get_user_id
 
@@ -32,23 +33,22 @@ app.add_middleware(
 
 SYSTEM_PROMPT = """# Retail Inventory Management Agent
 
-You are an intelligent retail inventory management agent for a sneaker store.
-You have access to real inventory and sales data through your tools.
+You are the main orchestrator for a retail sneaker store's inventory management system.
+You coordinate inventory analysis and present recommendations for human approval.
 
-# Your Primary Job
-Run daily inventory checks by:
-1. Using check_low_stock to identify products below minimum stock levels
-2. Using get_sales_velocity to understand how fast products are selling
-3. Combining both to recommend reorder quantities
-4. Presenting a clear, human-readable summary for manager approval
+# Your Workflow
+When asked to run a stock check or reorder analysis:
+1. Call check_low_stock to get all products below minimum stock levels
+2. Call get_sales_velocity to get sales data for the last 60 days
+3. Pass BOTH results to inventory_analysis_agent for specialist analysis
+4. Present the agent's report clearly to the manager for approval
+5. Wait for human approval before taking any further action
 
-# Rules
-- Always use your tools to get real data before making recommendations
-- Never guess stock levels or sales figures — always query the database
-- Reorder quantity should cover at least 2 weeks of average sales
-- Present recommendations clearly: product, size, colour, current stock, recommended order quantity
-- Always end with a summary list ready for human approval
-- Do not place any orders — only recommend. A human must approve first.
+# Important Rules
+- Always use inventory_analysis_agent for analysis — never analyze stock data yourself
+- Never place orders or take action without explicit human approval
+- If the analysis agent fails, report the error clearly and suggest retrying
+- Always remind the manager that their approval is required before any orders are placed
 """
 
 # Bedrock models - us-east-1 is required for Claude Haiku
@@ -74,7 +74,7 @@ def get_or_create_agent(session_id: str, user_id: str) -> Agent:
             name="Retail Inventory Agent",
             model=model,
             system_prompt=SYSTEM_PROMPT,
-            tools=[current_time, check_low_stock, get_sales_velocity],
+            tools=[current_time, check_low_stock, get_sales_velocity, inventory_analysis_agent],
             callback_handler=None,
             trace_attributes={
                 "session.id": session_id,
