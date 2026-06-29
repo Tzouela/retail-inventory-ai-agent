@@ -82,6 +82,29 @@ Resources:
         - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
         - 'arn:aws:iam::aws:policy/BedrockAgentCoreFullAccess'
 
+  AgentMemory:
+    Type: AWS::BedrockAgentCore::Memory
+    Properties:
+      Name: inventory_agent_memory
+      Description: Memory for the retail inventory AI agent
+      EventExpiryDuration: 30
+      MemoryStrategies:
+        - UserPreferenceMemoryStrategy:
+            Name: ManagerPreferences
+            Description: Learns manager preferences like order quantities, supplier choices, approval thresholds
+            Namespaces:
+              - /preferences/{actorId}
+        - SemanticMemoryStrategy:
+            Name: InventoryFacts
+            Description: Stores facts about suppliers, products, store operations
+            Namespaces:
+              - /facts/{actorId}
+        - SummaryMemoryStrategy:
+            Name: SessionSummaries
+            Description: Summarizes past inventory check sessions
+            Namespaces:
+              - /summaries/{actorId}/{sessionId}      
+
   AgentRuntime:
     Type: AWS::BedrockAgentCore::Runtime
     Properties:
@@ -112,6 +135,7 @@ Resources:
         DB_NAME: !Ref DbName
         DB_USER: !Ref DbUser
         DB_PASSWORD: !Ref DbPassword
+        MEMORY_ID: !GetAtt AgentMemory.MemoryId
 
 Outputs:
   RuntimeArn:
@@ -120,4 +144,8 @@ Outputs:
 
   Endpoint:
     Description: AgentCore Runtime endpoint URL
-    Value: !Sub 'https://bedrock-agentcore.${AWS::Region}.amazonaws.com/runtimes/${AgentRuntime.AgentRuntimeArn}/invocations'  
+    Value: !Sub 'https://bedrock-agentcore.${AWS::Region}.amazonaws.com/runtimes/${AgentRuntime.AgentRuntimeArn}/invocations'
+
+  MemoryId:
+    Description: AgentCore Memory ID (for local development)
+    Value: !GetAtt AgentMemory.MemoryId    

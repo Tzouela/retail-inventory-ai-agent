@@ -17,6 +17,13 @@ from tools.inventory_tools import check_low_stock, get_sales_velocity
 from sub_agents.inventory_analysis_agent import inventory_analysis_agent
 from streaming import parse_agent_events
 from utils import get_user_id
+from bedrock_agentcore.memory.integrations.strands.config import (
+    AgentCoreMemoryConfig,
+    RetrievalConfig,
+)
+from bedrock_agentcore.memory.integrations.strands.session_manager import (
+    AgentCoreMemorySessionManager,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("inventory-agent")
@@ -63,12 +70,38 @@ model = BedrockModel(
 # Global agent instance (lazy initialization)
 agent: Agent | None = None
 
+def create_session_manager(session_id: str, actor_id: str) -> AgentCoreMemorySessionManager | None:
+    """Create a session manager for AgentCore Memory."""
+    memory_id = os.getenv("MEMORY_ID")
+    if not memory_id:
+        logger.warning("MEMORY_ID not set - running without memory")
+        return None
+
+    config = AgentCoreMemoryConfig(
+        memory_id=memory_id,
+        session_id=session_id,
+        actor_id=actor_id,
+        retrieval_config={
+            "/preferences/{actorId}": RetrievalConfig(top_k=5, relevance_score=0.5),
+            "/facts/{actorId}": RetrievalConfig(top_k=10, relevance_score=0.3),
+            "/summaries/{actorId}": RetrievalConfig(top_k=3, relevance_score=0.5),
+        },
+    )
+
+    return AgentCoreMemorySessionManager(
+        agentcore_memory_config=config,
+        region_name=os.getenv("AWS_REGION"),
+    )
+
 
 def get_or_create_agent(session_id: str, user_id: str) -> Agent:
     """Get or create the agent instance."""
     global agent
     if agent is None:
         logger.info("Creating Retail Inventory agent")
+        session_manager = create_session_manager(session_id, user_id)
+        if session_manager:
+            logger.info("Memory session manager enabled")
 
         agent = Agent(
             name="Retail Inventory Agent",
@@ -76,6 +109,7 @@ def get_or_create_agent(session_id: str, user_id: str) -> Agent:
             system_prompt=SYSTEM_PROMPT,
             tools=[current_time, check_low_stock, get_sales_velocity, inventory_analysis_agent],
             callback_handler=None,
+            session_manager=session_manager,
             trace_attributes={
                 "session.id": session_id,
                 "user.id": user_id,
