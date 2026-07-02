@@ -45,3 +45,26 @@ def execute_query(query: str, params: tuple = None) -> list:
             cursor.close()
         if connection and connection.is_connected():
             connection.close()
+
+def execute_write(query: str, params: tuple = None) -> int:
+    """Execute an INSERT, UPDATE, or DELETE query and return affected rows."""
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        cursor.execute(query, params or ())
+        connection.commit()
+        affected_rows = cursor.rowcount
+        logger.info(f"Write query affected {affected_rows} rows")
+        return affected_rows
+    except Error as e:
+        logger.error(f"Error executing write query: {e}")
+        if connection:
+            connection.rollback()
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()

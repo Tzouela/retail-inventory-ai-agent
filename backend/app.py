@@ -13,7 +13,8 @@ from pydantic import BaseModel
 from strands import Agent
 from strands.models.bedrock import BedrockModel
 from strands_tools import current_time
-from tools.inventory_tools import check_low_stock, get_sales_velocity
+from tools.inventory_tools import check_low_stock, get_sales_velocity, place_order
+from tools.approval_hooks import ReorderApprovalHook
 from sub_agents.inventory_analysis_agent import inventory_analysis_agent
 from streaming import parse_agent_events
 from utils import get_user_id
@@ -107,8 +108,9 @@ def get_or_create_agent(session_id: str, user_id: str) -> Agent:
             name="Retail Inventory Agent",
             model=model,
             system_prompt=SYSTEM_PROMPT,
-            tools=[current_time, check_low_stock, get_sales_velocity, inventory_analysis_agent],
+            tools=[current_time, check_low_stock, get_sales_velocity, place_order, inventory_analysis_agent],
             callback_handler=None,
+            hooks=[ReorderApprovalHook()],
             session_manager=session_manager,
             trace_attributes={
                 "session.id": session_id,
@@ -141,8 +143,17 @@ async def invocations(payload: InvocationRequest, request: Request):
     if not payload.prompt:
         return {"error": "No prompt provided"}
 
+    interrupt_id = request.headers.get(
+        "X-Amzn-Bedrock-AgentCore-Runtime-Custom-Interrupt-Id"
+    )
+
+    if interrupt_id:
+        input_message = [{"interruptResponse": {"interruptId": interrupt_id, "response": payload.prompt}}]
+    else:
+        input_message = payload.prompt
+
     agent = get_or_create_agent(session_id, user_id)
-    agent_stream = agent.stream_async(payload.prompt)
+    agent_stream = agent.stream_async(input_message)
     parsed_stream = parse_agent_events(agent_stream)
 
     return StreamingResponse(parsed_stream, media_type="application/x-ndjson")
