@@ -25,6 +25,7 @@ services:
       - AWS_SESSION_TOKEN
       - DB_HOST=mysql-db
       - DB_PORT=3306
+      - AC_GATEWAY_URL=https://inventory-agent-gateway-i4klb8c7ov.gateway.bedrock-agentcore.eu-north-1.amazonaws.com/mcp
     volumes:
       - .:/app
       - ~/.aws:/home/agentuser/.aws:ro
