@@ -12,7 +12,7 @@
     }
   ],
   "paths": {
-    "/services/T0BHPPDUVR7/B0BHKTT7TPY/1GOWQJCstYnavMf4XhvYqv4P": {
+        "/services/REPLACE_WITH_YOUR_WEBHOOK_PATH": {
       "post": {
         "operationId": "send_slack_notification",
         "summary": "Send a notification to the inventory alerts Slack channel",
