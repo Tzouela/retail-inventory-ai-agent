@@ -4,10 +4,10 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: inventory_root
-      MYSQL_DATABASE: inventory_db
-      MYSQL_USER: inventory_user
-      MYSQL_PASSWORD: inventory_pass
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ../database/migrations:/docker-entrypoint-initdb.d
@@ -25,7 +25,7 @@ services:
       - AWS_SESSION_TOKEN
       - DB_HOST=mysql-db
       - DB_PORT=3306
-      - AC_GATEWAY_URL=https://inventory-agent-gateway-i4klb8c7ov.gateway.bedrock-agentcore.eu-north-1.amazonaws.com/mcp
+      - AC_GATEWAY_URL=${AC_GATEWAY_URL}
     volumes:
       - .:/app
       - ~/.aws:/home/agentuser/.aws:ro

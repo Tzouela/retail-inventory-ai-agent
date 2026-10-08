@@ -17,7 +17,7 @@ def get_connection():
             port=int(os.getenv("DB_PORT", "3306")),
             database=os.getenv("DB_NAME", "inventory_db"),
             user=os.getenv("DB_USER", "inventory_user"),
-            password=os.getenv("DB_PASSWORD", "inventory_pass")
+            password=os.getenv("DB_PASSWORD")
         )
         if connection.is_connected():
             logger.info("Successfully connected to MySQL database")
